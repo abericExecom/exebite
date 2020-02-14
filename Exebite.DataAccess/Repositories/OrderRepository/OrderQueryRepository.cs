@@ -64,7 +64,7 @@ namespace Exebite.DataAccess.Repositories
 
                     if (queryModel.Date != null)
                     {
-                        query = query.Where(x => x.Date == queryModel.Date.Value);
+                        query = query.Where(x => x.Date.ToString("dd-MMM-yyyy") == queryModel.Date.Value.ToString("dd-MMM-yyyy"));
                     }
 
                     if (queryModel.CustomerId != null)

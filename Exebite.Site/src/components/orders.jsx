@@ -1,12 +1,14 @@
 import React, { Component } from "react";
 import Order from "./order";
 import Select from "react-select";
+import ExistingOrder from "./existingOrder";
 
 class Orders extends Component {
   state = {
     locations: [],
     selectedOption: null,
-    databaseUser: {}
+    databaseUser: {},
+    existingOrders: []
   };
 
   componentDidMount() {
@@ -23,6 +25,8 @@ class Orders extends Component {
         console.log(response);
         this.setState({ databaseUser: response.items[0] });
         console.log("user is loaded");
+
+        this.getExistingOrders();
       })
       .catch(err => console.log(err));
 
@@ -90,7 +94,7 @@ class Orders extends Component {
           },
           body: JSON.stringify({
             price: this.getOrderPrice(),
-            date: new Date(),
+            date: new Date().toISOString(),
             mealId: data.id,
             customerId: this.state.databaseUser.id,
             note: "none"
@@ -100,6 +104,7 @@ class Orders extends Component {
           .then(response => {
             if (response.id !== 0) {
               this.props.onOrderSubmitted();
+              this.getExistingOrders();
             }
           })
           .catch(error => console.log(error));
@@ -112,18 +117,65 @@ class Orders extends Component {
     return orders.reduce((total, food) => total + food.price, 0);
   };
 
+  getExistingOrders = () => {
+    const url =
+      "http://localhost:6879/api/orders/Query?Date=" +
+      new Date().toISOString() +
+      "&CustomerId=" +
+      this.state.databaseUser.id +
+      "&Page=1&Size=100";
+    fetch(url)
+      .then(response => response.json())
+      .then(response => {
+        this.setState({ existingOrders: [] });
+        response.items.map(meal => {
+          fetch(
+            "http://localhost:6879/api/meal/Query?Id=" +
+              meal.mealId +
+              "&Page=1&Size=100"
+          )
+            .then(response => response.json())
+            .then(response => {
+              this.setState({
+                existingOrders: [
+                  ...this.state.existingOrders,
+                  response.items[0]
+                ]
+              });
+            })
+            .catch(err => console.log(err));
+        });
+      })
+      .catch(err => console.log(err));
+  };
+
+  handleOrderRemove = orderId => {
+    console.log("handleOrderRemove called");
+    fetch("http://localhost:6879/api/meal/" + orderId, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json"
+      }
+    })
+      .then(response => {
+        if (response.status === 204) {
+          this.setState({
+            existingOrders: this.state.existingOrders.filter(
+              x => x.id !== orderId
+            )
+          });
+        }
+      })
+      .catch(error => console.log(error));
+  };
   render() {
     const { orders, onRemoveFromOrder } = this.props;
-    const { locations } = this.state;
+    const { locations, existingOrders } = this.state;
     return (
       <div>
         <h2>Order</h2>
         <p>Location for delivery:</p>
-        <Select
-          options={locations}
-          onChange={this.handleLocationChange}
-          value={locations[0]}
-        />
+        <Select options={locations} onChange={this.handleLocationChange} />
         <h3>Added meals:</h3>
         {orders.map((order, index) => {
           return (
@@ -139,6 +191,17 @@ class Orders extends Component {
         <button disabled={orders.length === 0} onClick={this.handleSubmit}>
           Submit order
         </button>
+
+        <h3>Existing order(s):</h3>
+        {existingOrders.map((order, index) => {
+          return (
+            <ExistingOrder
+              key={index}
+              order={order}
+              onOrderRemove={this.handleOrderRemove}
+            />
+          );
+        })}
       </div>
     );
   }

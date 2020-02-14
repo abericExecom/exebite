@@ -43,7 +43,10 @@ class App extends Component {
       <React.Fragment>
         <h1>Welcome to ExeBite!</h1>
         <main className="container">
-          <Orders orders={orders} onRemoveFromOrder={this.handlerRemoveFromOrder} onOrderSubmitted={this.orderSubmitted} />
+          <Orders
+            orders={orders}
+            onRemoveFromOrder={this.handlerRemoveFromOrder}
+            onOrderSubmitted={this.orderSubmitted} />
           <DailyMenus
             dailyMenus={dailyMenus}
             onAddToOrder={this.handleAddToOrder}

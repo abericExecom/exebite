@@ -127,8 +127,19 @@ namespace Exebite.GoogleSheetAPI.Services
                 }
                 else
                 {
+                    var updatedFood = new FoodUpdateModel
+                    {
+                        Description = food.Description,
+                        IsInactive = food.IsInactive,
+                        Name = food.Name,
+                        Price = food.Price,
+                        RestaurantId = food.RestaurantId,
+                        DailyMenuId = dailyMenuId,
+                        Type = food.Type
+                    };
+
                     updated += _mapper
-                        .Map<FoodUpdateModel>(food)
+                        .Map<FoodUpdateModel>(updatedFood)
                         .Map(_foodCommandRepository.UpdateByNameAndRestaurantId)
                         .Reduce(r => false, ex => Console.WriteLine(ex.ToString())) ? 1 : 0;
                 }
